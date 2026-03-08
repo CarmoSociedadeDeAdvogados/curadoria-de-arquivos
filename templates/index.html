@@ -423,6 +423,14 @@
         </div>
 
         <div id="listaOrfaos"></div>
+
+        <div id="organizarArea" class="hidden" style="margin-top:20px;padding:20px;background:#f0f7ff;border-radius:10px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <strong>Organizar arquivos</strong>
+            <p style="font-size:13px;color:#6e6e73;margin-top:4px;">Mover os .CR3 restantes para a pasta RAW (ao lado da pasta JPEG)</p>
+          </div>
+          <button class="btn btn-primary" id="btnOrganizar" onclick="organizarRaw()">Mover para RAW</button>
+        </div>
       </div>
     </div>
 
@@ -624,6 +632,15 @@
         orfaosData = data.orfaos;
 
         renderizarLista();
+        // Mostrar botão Organizar RAW se há CR3 com correspondente JPG
+        const cr3ComJpg = data.total_cr3 - data.total_orfaos;
+        const orgArea = document.getElementById('organizarArea');
+        if (cr3ComJpg > 0) {
+          orgArea.classList.remove('hidden');
+          orgArea.style.display = '';
+        } else {
+          orgArea.classList.add('hidden');
+        }
         document.getElementById('loadingArea').classList.add('hidden');
         document.getElementById('resultados').classList.remove('hidden');
       } catch (e) {
@@ -753,6 +770,40 @@
         showToast('Erro ao excluir arquivos', 'error');
         document.getElementById('btnExcluir').disabled = false;
         document.getElementById('btnExcluir').textContent = 'Mover para Lixeira';
+      }
+    }
+
+    async function organizarRaw() {
+      const mes = document.getElementById('selMes').value;
+      const cliente = document.getElementById('selCliente').value;
+      const subpasta = document.getElementById('selSubpasta').value;
+      if (!mes || !cliente || !subpasta) return;
+
+      if (!confirm(`Mover todos os .CR3 restantes da pasta ${subpasta} para a pasta RAW?`)) return;
+
+      document.getElementById('btnOrganizar').disabled = true;
+      document.getElementById('btnOrganizar').textContent = 'Movendo...';
+
+      try {
+        const res = await fetch('/api/organizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mes, cliente, subpasta })
+        });
+        const data = await res.json();
+
+        if (data.erros && data.erros.length > 0) {
+          showToast(`${data.movidos} movido(s), ${data.erros.length} erro(s)`, 'error');
+        } else {
+          showToast(`${data.movidos} arquivo(s) .CR3 movido(s) para RAW`, 'success');
+        }
+
+        document.getElementById('organizarArea').classList.add('hidden');
+        analisar();
+      } catch (e) {
+        showToast('Erro ao organizar arquivos', 'error');
+        document.getElementById('btnOrganizar').disabled = false;
+        document.getElementById('btnOrganizar').textContent = 'Mover para RAW';
       }
     }
 

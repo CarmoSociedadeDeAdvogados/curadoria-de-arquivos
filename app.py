@@ -175,6 +175,42 @@ def excluir():
     })
 
 
+@app.route("/api/organizar", methods=["POST"])
+def organizar():
+    data = request.get_json()
+    mes = data.get("mes", "")
+    cliente = data.get("cliente", "")
+    subpasta = data.get("subpasta", "")
+
+    config = load_config()
+    base = config.get("base_path", "")
+    source_path = os.path.join(base, mes, cliente, subpasta)
+    raw_path = os.path.join(base, mes, cliente, "RAW")
+
+    if not os.path.isdir(source_path):
+        return jsonify({"error": "Pasta de origem não encontrada"}), 400
+
+    os.makedirs(raw_path, exist_ok=True)
+
+    movidos = 0
+    erros = []
+    for f in os.listdir(source_path):
+        if f.lower().endswith(".cr3"):
+            src = os.path.join(source_path, f)
+            dst = os.path.join(raw_path, f)
+            try:
+                os.rename(src, dst)
+                movidos += 1
+            except OSError as e:
+                erros.append(f"Erro ao mover {f}: {e}")
+
+    return jsonify({
+        "movidos": movidos,
+        "pasta_raw": raw_path,
+        "erros": erros,
+    })
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, port=port)
