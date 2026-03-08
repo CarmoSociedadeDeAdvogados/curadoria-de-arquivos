@@ -9,10 +9,29 @@ app = Flask(__name__)
 CONFIG_FILE = Path(__file__).parent / "config.json"
 
 
+ICLOUD_SG_PATH = os.path.join(
+    Path.home(),
+    "Library", "Mobile Documents", "com~apple~CloudDocs", "SG 2026",
+)
+
+
+def auto_detect_path():
+    if os.path.isdir(ICLOUD_SG_PATH):
+        return ICLOUD_SG_PATH
+    return ""
+
+
 def load_config():
     if CONFIG_FILE.exists():
         with open(CONFIG_FILE) as f:
-            return json.load(f)
+            config = json.load(f)
+        if config.get("base_path") and os.path.isdir(config["base_path"]):
+            return config
+    detected = auto_detect_path()
+    if detected:
+        config = {"base_path": detected}
+        save_config(config)
+        return config
     return {"base_path": ""}
 
 
@@ -72,18 +91,32 @@ def listar_clientes(mes):
     return jsonify(clientes)
 
 
-@app.route("/api/analisar/<mes>/<cliente>")
-def analisar(mes, cliente):
+@app.route("/api/subpastas/<mes>/<cliente>")
+def listar_subpastas(mes, cliente):
     config = load_config()
     base = config.get("base_path", "")
     cliente_path = os.path.join(base, mes, cliente)
     if not os.path.isdir(cliente_path):
         return jsonify({"error": "Pasta da cliente não encontrada"}), 400
+    subpastas = sorted(
+        d for d in os.listdir(cliente_path)
+        if os.path.isdir(os.path.join(cliente_path, d)) and not d.startswith(".")
+    )
+    return jsonify(subpastas)
+
+
+@app.route("/api/analisar/<mes>/<cliente>/<subpasta>")
+def analisar(mes, cliente, subpasta):
+    config = load_config()
+    base = config.get("base_path", "")
+    target_path = os.path.join(base, mes, cliente, subpasta)
+    if not os.path.isdir(target_path):
+        return jsonify({"error": "Pasta não encontrada"}), 400
 
     jpgs = {}
     cr3s = {}
 
-    for root, _, files in os.walk(cliente_path):
+    for root, _, files in os.walk(target_path):
         for f in files:
             name_lower = f.lower()
             base_name = os.path.splitext(f)[0].upper()

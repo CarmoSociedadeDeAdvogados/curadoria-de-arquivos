@@ -352,16 +352,16 @@
     <h1>Curadoria de Arquivos</h1>
     <p class="subtitle">Compare e limpe arquivos .CR3 sem correspondente .JPG</p>
 
-    <!-- Config -->
-    <div class="card">
+    <!-- Config (colapsável) -->
+    <div class="card" id="configCard" style="display:none;">
       <h2>
         <span class="icon" style="background:#6e6e73">&#9881;</span>
-        Configuração
-        <span id="configStatus" class="config-status config-missing">Não configurado</span>
+        Configuração Manual
       </h2>
+      <p style="font-size:13px;color:#86868b;margin-bottom:12px;">Pasta SG 2026 não encontrada automaticamente no iCloud Drive. Informe o caminho manualmente.</p>
       <div class="row">
         <div class="field">
-          <label for="basePath">Caminho da pasta SG 2026 no iCloud Drive</label>
+          <label for="basePath">Caminho da pasta SG 2026</label>
           <input type="text" id="basePath" placeholder="Ex: ~/Library/Mobile Documents/com~apple~CloudDocs/SG 2026">
         </div>
         <button class="btn btn-primary" onclick="salvarConfig()">Salvar</button>
@@ -373,6 +373,7 @@
       <h2>
         <span class="icon" style="background:#0071e3">&#128193;</span>
         Selecionar Pasta
+        <button class="btn btn-secondary" style="margin-left:auto;padding:6px 14px;font-size:13px;" onclick="atualizar()">&#8635; Atualizar</button>
       </h2>
       <div class="row">
         <div class="field">
@@ -383,8 +384,16 @@
         </div>
         <div class="field">
           <label for="selCliente">Cliente</label>
-          <select id="selCliente" disabled>
+          <select id="selCliente" disabled onchange="carregarSubpastas()">
             <option value="">Selecione a cliente</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 12px;">
+        <div class="field">
+          <label for="selSubpasta">Pasta</label>
+          <select id="selSubpasta" disabled>
+            <option value="">Selecione a pasta</option>
           </select>
         </div>
         <button class="btn btn-primary" id="btnAnalisar" disabled onclick="analisar()">Analisar</button>
@@ -438,23 +447,32 @@
         const config = await res.json();
         if (config.base_path) {
           document.getElementById('basePath').value = config.base_path;
-          atualizarConfigStatus(true);
+          document.getElementById('configCard').style.display = 'none';
           carregarMeses();
+        } else {
+          document.getElementById('configCard').style.display = '';
         }
       } catch (e) {
-        console.error(e);
+        document.getElementById('configCard').style.display = '';
       }
     }
 
-    function atualizarConfigStatus(ok) {
-      const el = document.getElementById('configStatus');
-      if (ok) {
-        el.textContent = 'Configurado';
-        el.className = 'config-status config-ok';
-      } else {
-        el.textContent = 'Não configurado';
-        el.className = 'config-status config-missing';
-      }
+    function atualizar() {
+      const mes = document.getElementById('selMes').value;
+      const cliente = document.getElementById('selCliente').value;
+
+      carregarMeses().then(() => {
+        if (mes) {
+          document.getElementById('selMes').value = mes;
+          carregarClientes().then(() => {
+            if (cliente) {
+              document.getElementById('selCliente').value = cliente;
+              carregarSubpastas();
+            }
+          });
+        }
+      });
+      showToast('Pastas atualizadas', 'success');
     }
 
     async function salvarConfig() {
@@ -471,7 +489,7 @@
         if (!res.ok) return showToast(data.error, 'error');
 
         document.getElementById('basePath').value = data.base_path;
-        atualizarConfigStatus(true);
+        document.getElementById('configCard').style.display = 'none';
         showToast('Caminho salvo com sucesso', 'success');
         carregarMeses();
       } catch (e) {
@@ -503,6 +521,8 @@
 
       document.getElementById('selCliente').innerHTML = '<option value="">Selecione a cliente</option>';
       document.getElementById('selCliente').disabled = true;
+      document.getElementById('selSubpasta').innerHTML = '<option value="">Selecione a pasta</option>';
+      document.getElementById('selSubpasta').disabled = true;
       document.getElementById('btnAnalisar').disabled = true;
     }
 
@@ -510,10 +530,13 @@
       const mes = document.getElementById('selMes').value;
       const sel = document.getElementById('selCliente');
 
+      document.getElementById('selSubpasta').innerHTML = '<option value="">Selecione a pasta</option>';
+      document.getElementById('selSubpasta').disabled = true;
+      document.getElementById('btnAnalisar').disabled = true;
+
       if (!mes) {
         sel.innerHTML = '<option value="">Selecione a cliente</option>';
         sel.disabled = true;
-        document.getElementById('btnAnalisar').disabled = true;
         return;
       }
 
@@ -533,26 +556,61 @@
           sel.appendChild(opt);
         });
         sel.disabled = false;
+      } catch (e) {
+        showToast('Erro ao carregar clientes', 'error');
+      }
+    }
+
+    async function carregarSubpastas() {
+      const mes = document.getElementById('selMes').value;
+      const cliente = document.getElementById('selCliente').value;
+      const sel = document.getElementById('selSubpasta');
+
+      document.getElementById('btnAnalisar').disabled = true;
+
+      if (!cliente) {
+        sel.innerHTML = '<option value="">Selecione a pasta</option>';
+        sel.disabled = true;
+        return;
+      }
+
+      sel.innerHTML = '<option value="">Carregando...</option>';
+      sel.disabled = true;
+
+      try {
+        const res = await fetch(`/api/subpastas/${encodeURIComponent(mes)}/${encodeURIComponent(cliente)}`);
+        const subpastas = await res.json();
+        if (subpastas.error) return showToast(subpastas.error, 'error');
+
+        sel.innerHTML = '<option value="">Selecione a pasta</option>';
+        subpastas.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          sel.appendChild(opt);
+        });
+        sel.disabled = false;
 
         sel.onchange = () => {
           document.getElementById('btnAnalisar').disabled = !sel.value;
         };
       } catch (e) {
-        showToast('Erro ao carregar clientes', 'error');
+        showToast('Erro ao carregar subpastas', 'error');
       }
     }
 
     async function analisar() {
       const mes = document.getElementById('selMes').value;
       const cliente = document.getElementById('selCliente').value;
-      if (!mes || !cliente) return;
+      const subpasta = document.getElementById('selSubpasta').value;
+      if (!mes || !cliente || !subpasta) return;
 
       document.getElementById('resultados').classList.add('hidden');
       document.getElementById('loadingArea').classList.remove('hidden');
       document.getElementById('loadingText').textContent = 'Analisando arquivos...';
 
       try {
-        const res = await fetch(`/api/analisar/${encodeURIComponent(mes)}/${encodeURIComponent(cliente)}`);
+        const res = await fetch(`/api/analisar/${encodeURIComponent(mes)}/${encodeURIComponent(cliente)}/${encodeURIComponent(subpasta)}`);
         const data = await res.json();
         if (data.error) {
           showToast(data.error, 'error');
