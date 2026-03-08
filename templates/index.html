@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Curadoria de Arquivos</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #86868b;
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h2 .icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #6e6e73;
+    }
+
+    input, select {
+      padding: 10px 14px;
+      border: 1px solid #d2d2d7;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      background: #fff;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #0071e3;
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
+    }
+
+    select:disabled, input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #0071e3;
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #0077ed;
+    }
+
+    .btn-danger {
+      background: #ff3b30;
+      color: #fff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #e6352b;
+    }
+
+    .btn-secondary {
+      background: #e8e8ed;
+      color: #1d1d1f;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #dcdce1;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      text-align: center;
+      padding: 20px 16px;
+      border-radius: 10px;
+      background: #f5f5f7;
+    }
+
+    .stat .number {
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat .label {
+      font-size: 13px;
+      color: #6e6e73;
+      font-weight: 500;
+    }
+
+    .stat-jpg { background: #e8f5e9; }
+    .stat-jpg .number { color: #2e7d32; }
+
+    .stat-cr3 { background: #e3f2fd; }
+    .stat-cr3 .number { color: #1565c0; }
+
+    .stat-orfaos { background: #fff3e0; }
+    .stat-orfaos .number { color: #e65100; }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .table-header label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #1d1d1f;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6e6e73;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e8e8ed;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f0f0f5;
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover {
+      background: #f9f9fb;
+    }
+
+    tbody td {
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .path-cell {
+      font-size: 12px;
+      color: #86868b;
+      max-width: 400px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .size-cell {
+      text-align: right;
+      white-space: nowrap;
+      color: #6e6e73;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #0071e3;
+      cursor: pointer;
+    }
+
+    .actions-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e8e8ed;
+    }
+
+    .selected-count {
+      font-size: 14px;
+      color: #6e6e73;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: #86868b;
+    }
+
+    .empty-state .emoji {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 40px;
+      color: #6e6e73;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #d2d2d7;
+      border-top-color: #0071e3;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 14px 24px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 500;
+      z-index: 100;
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast-success { background: #34c759; }
+    .toast-error { background: #ff3b30; }
+
+    .config-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-left: 8px;
+    }
+
+    .config-ok {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .config-missing {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 640px) {
+      .row { flex-direction: column; }
+      .stats { grid-template-columns: 1fr; }
+      .path-cell { max-width: 200px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Curadoria de Arquivos</h1>
+    <p class="subtitle">Compare e limpe arquivos .CR3 sem correspondente .JPG</p>
+
+    <!-- Config -->
+    <div class="card">
+      <h2>
+        <span class="icon" style="background:#6e6e73">&#9881;</span>
+        Configuração
+        <span id="configStatus" class="config-status config-missing">Não configurado</span>
+      </h2>
+      <div class="row">
+        <div class="field">
+          <label for="basePath">Caminho da pasta SG 2026 no iCloud Drive</label>
+          <input type="text" id="basePath" placeholder="Ex: ~/Library/Mobile Documents/com~apple~CloudDocs/SG 2026">
+        </div>
+        <button class="btn btn-primary" onclick="salvarConfig()">Salvar</button>
+      </div>
+    </div>
+
+    <!-- Seleção -->
+    <div class="card">
+      <h2>
+        <span class="icon" style="background:#0071e3">&#128193;</span>
+        Selecionar Pasta
+      </h2>
+      <div class="row">
+        <div class="field">
+          <label for="selMes">Mês</label>
+          <select id="selMes" disabled onchange="carregarClientes()">
+            <option value="">Selecione o mês</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="selCliente">Cliente</label>
+          <select id="selCliente" disabled>
+            <option value="">Selecione a cliente</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="btnAnalisar" disabled onclick="analisar()">Analisar</button>
+      </div>
+    </div>
+
+    <!-- Resultados -->
+    <div id="resultados" class="hidden">
+      <div class="card">
+        <h2>
+          <span class="icon" style="background:#34c759">&#128202;</span>
+          Resultado da Análise
+        </h2>
+        <div class="stats">
+          <div class="stat stat-jpg">
+            <div class="number" id="numJpg">0</div>
+            <div class="label">Arquivos .JPG</div>
+          </div>
+          <div class="stat stat-cr3">
+            <div class="number" id="numCr3">0</div>
+            <div class="label">Arquivos .CR3</div>
+          </div>
+          <div class="stat stat-orfaos">
+            <div class="number" id="numOrfaos">0</div>
+            <div class="label">.CR3 a excluir</div>
+          </div>
+        </div>
+
+        <div id="listaOrfaos"></div>
+      </div>
+    </div>
+
+    <div id="loadingArea" class="hidden">
+      <div class="card">
+        <div class="loading">
+          <div class="spinner"></div>
+          <span id="loadingText">Analisando arquivos...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let orfaosData = [];
+
+    async function init() {
+      try {
+        const res = await fetch('/api/config');
+        const config = await res.json();
+        if (config.base_path) {
+          document.getElementById('basePath').value = config.base_path;
+          atualizarConfigStatus(true);
+          carregarMeses();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function atualizarConfigStatus(ok) {
+      const el = document.getElementById('configStatus');
+      if (ok) {
+        el.textContent = 'Configurado';
+        el.className = 'config-status config-ok';
+      } else {
+        el.textContent = 'Não configurado';
+        el.className = 'config-status config-missing';
+      }
+    }
+
+    async function salvarConfig() {
+      const path = document.getElementById('basePath').value.trim();
+      if (!path) return showToast('Informe o caminho da pasta', 'error');
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base_path: path })
+        });
+        const data = await res.json();
+        if (!res.ok) return showToast(data.error, 'error');
+
+        document.getElementById('basePath').value = data.base_path;
+        atualizarConfigStatus(true);
+        showToast('Caminho salvo com sucesso', 'success');
+        carregarMeses();
+      } catch (e) {
+        showToast('Erro ao salvar configuração', 'error');
+      }
+    }
+
+    async function carregarMeses() {
+      const sel = document.getElementById('selMes');
+      sel.innerHTML = '<option value="">Carregando...</option>';
+      sel.disabled = true;
+
+      try {
+        const res = await fetch('/api/meses');
+        const meses = await res.json();
+        if (meses.error) return showToast(meses.error, 'error');
+
+        sel.innerHTML = '<option value="">Selecione o mês</option>';
+        meses.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m;
+          opt.textContent = m;
+          sel.appendChild(opt);
+        });
+        sel.disabled = false;
+      } catch (e) {
+        showToast('Erro ao carregar meses', 'error');
+      }
+
+      document.getElementById('selCliente').innerHTML = '<option value="">Selecione a cliente</option>';
+      document.getElementById('selCliente').disabled = true;
+      document.getElementById('btnAnalisar').disabled = true;
+    }
+
+    async function carregarClientes() {
+      const mes = document.getElementById('selMes').value;
+      const sel = document.getElementById('selCliente');
+
+      if (!mes) {
+        sel.innerHTML = '<option value="">Selecione a cliente</option>';
+        sel.disabled = true;
+        document.getElementById('btnAnalisar').disabled = true;
+        return;
+      }
+
+      sel.innerHTML = '<option value="">Carregando...</option>';
+      sel.disabled = true;
+
+      try {
+        const res = await fetch(`/api/clientes/${encodeURIComponent(mes)}`);
+        const clientes = await res.json();
+        if (clientes.error) return showToast(clientes.error, 'error');
+
+        sel.innerHTML = '<option value="">Selecione a cliente</option>';
+        clientes.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c;
+          opt.textContent = c;
+          sel.appendChild(opt);
+        });
+        sel.disabled = false;
+
+        sel.onchange = () => {
+          document.getElementById('btnAnalisar').disabled = !sel.value;
+        };
+      } catch (e) {
+        showToast('Erro ao carregar clientes', 'error');
+      }
+    }
+
+    async function analisar() {
+      const mes = document.getElementById('selMes').value;
+      const cliente = document.getElementById('selCliente').value;
+      if (!mes || !cliente) return;
+
+      document.getElementById('resultados').classList.add('hidden');
+      document.getElementById('loadingArea').classList.remove('hidden');
+      document.getElementById('loadingText').textContent = 'Analisando arquivos...';
+
+      try {
+        const res = await fetch(`/api/analisar/${encodeURIComponent(mes)}/${encodeURIComponent(cliente)}`);
+        const data = await res.json();
+        if (data.error) {
+          showToast(data.error, 'error');
+          document.getElementById('loadingArea').classList.add('hidden');
+          return;
+        }
+
+        document.getElementById('numJpg').textContent = data.total_jpg;
+        document.getElementById('numCr3').textContent = data.total_cr3;
+        document.getElementById('numOrfaos').textContent = data.total_orfaos;
+        orfaosData = data.orfaos;
+
+        renderizarLista();
+        document.getElementById('loadingArea').classList.add('hidden');
+        document.getElementById('resultados').classList.remove('hidden');
+      } catch (e) {
+        showToast('Erro ao analisar', 'error');
+        document.getElementById('loadingArea').classList.add('hidden');
+      }
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function renderizarLista() {
+      const container = document.getElementById('listaOrfaos');
+
+      if (orfaosData.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">&#10004;&#65039;</div>
+            <p><strong>Nenhum arquivo .CR3 órfão encontrado!</strong></p>
+            <p>Todos os .CR3 possuem um .JPG correspondente.</p>
+          </div>`;
+        return;
+      }
+
+      const totalSize = orfaosData.reduce((sum, f) => sum + f.tamanho, 0);
+
+      let html = `
+        <div class="table-header">
+          <label>
+            <input type="checkbox" id="checkAll" checked onchange="toggleAll(this.checked)">
+            Selecionar todos
+          </label>
+          <span style="font-size:13px;color:#6e6e73">
+            Espaço total: <strong>${formatSize(totalSize)}</strong>
+          </span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px"></th>
+              <th>Arquivo</th>
+              <th>Caminho</th>
+              <th style="text-align:right">Tamanho</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      orfaosData.forEach((f, i) => {
+        html += `
+          <tr>
+            <td><input type="checkbox" class="file-check" data-index="${i}" checked onchange="atualizarContagem()"></td>
+            <td><strong>${f.nome}</strong></td>
+            <td class="path-cell" title="${f.caminho}">${f.caminho}</td>
+            <td class="size-cell">${formatSize(f.tamanho)}</td>
+          </tr>`;
+      });
+
+      html += `
+          </tbody>
+        </table>
+        <div class="actions-bar">
+          <span class="selected-count" id="selectedCount">${orfaosData.length} arquivo(s) selecionado(s)</span>
+          <button class="btn btn-danger" id="btnExcluir" onclick="confirmarExclusao()">Mover para Lixeira</button>
+        </div>`;
+
+      container.innerHTML = html;
+    }
+
+    function toggleAll(checked) {
+      document.querySelectorAll('.file-check').forEach(cb => cb.checked = checked);
+      atualizarContagem();
+    }
+
+    function atualizarContagem() {
+      const checks = document.querySelectorAll('.file-check');
+      const selecionados = [...checks].filter(c => c.checked).length;
+      document.getElementById('selectedCount').textContent = `${selecionados} arquivo(s) selecionado(s)`;
+      document.getElementById('btnExcluir').disabled = selecionados === 0;
+
+      const allChecked = selecionados === checks.length;
+      document.getElementById('checkAll').checked = allChecked;
+      document.getElementById('checkAll').indeterminate = selecionados > 0 && !allChecked;
+    }
+
+    function confirmarExclusao() {
+      const checks = document.querySelectorAll('.file-check:checked');
+      const count = checks.length;
+      if (count === 0) return;
+
+      const totalSize = [...checks].reduce((sum, cb) => {
+        return sum + orfaosData[cb.dataset.index].tamanho;
+      }, 0);
+
+      if (!confirm(`Mover ${count} arquivo(s) .CR3 para a Lixeira?\n\nEspaço a liberar: ${formatSize(totalSize)}\n\nEsta ação pode ser desfeita pela Lixeira.`)) {
+        return;
+      }
+      excluirArquivos();
+    }
+
+    async function excluirArquivos() {
+      const checks = document.querySelectorAll('.file-check:checked');
+      const arquivos = [...checks].map(cb => orfaosData[cb.dataset.index].caminho);
+
+      document.getElementById('btnExcluir').disabled = true;
+      document.getElementById('btnExcluir').textContent = 'Excluindo...';
+
+      try {
+        const res = await fetch('/api/excluir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ arquivos })
+        });
+        const data = await res.json();
+
+        if (data.erros && data.erros.length > 0) {
+          showToast(`${data.excluidos} excluído(s), ${data.erros.length} erro(s)`, 'error');
+        } else {
+          showToast(`${data.excluidos} arquivo(s) movido(s) para a Lixeira`, 'success');
+        }
+
+        // Re-analisar
+        analisar();
+      } catch (e) {
+        showToast('Erro ao excluir arquivos', 'error');
+        document.getElementById('btnExcluir').disabled = false;
+        document.getElementById('btnExcluir').textContent = 'Mover para Lixeira';
+      }
+    }
+
+    function showToast(msg, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = `toast toast-${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    init();
+  </script>
+</body>
+</html>
